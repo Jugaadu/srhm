@@ -8,27 +8,32 @@ import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
 from six.moves import cPickle as pickle
 import os
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import Imputer
 
-pickle_file = 'Xgb_3.pickle'
-output_file = 'sub_3.csv'
+pickle_file = 'Xgb_99.pickle'
+output_file = 'sub_99.csv'
 #read dataset
 
 train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
 macro = pd.read_csv('macro.csv')
 
+train['timestamp'] = pd.to_datetime(train.timestamp)
+test['timestamp'] = pd.to_datetime(test.timestamp)
+macro['timestamp'] = pd.to_datetime(macro.timestamp)
 print('Print the shape of train, test, and macro dataset')
 print(train.shape, test.shape, macro.shape)
 
-
-#fill NaN values with 0
-
-train = train.fillna(0)
-test = test.fillna(0)
+# fill na values with 0 in Macro dataset
+macro = macro.fillna(0)
+#macro.replace('#!',0,inplace = True)
+macro = macro.drop(['child_on_acc_pre_school',
+                    'modern_education_share',
+                    'old_education_build_share'],axis = 1)
 
 # encode the ctegorical variables
-
-
 le = LabelEncoder()
 
 FeatureNames = train.columns[1:-1]
@@ -38,17 +43,70 @@ for c in FeatureNames:
     if train[c].dtypes.name == 'object':
         Cat_features.append(c)
 print(Cat_features)
+le2 = LabelEncoder()
+for cd in macro.columns:
+    if macro[cd].dtypes.name =='object':
+        macro.cd = le2.fit_transform(macro[cd].astype(str)).astype(int)
 
+#impute missing values using Imputer
+
+# impute missing values
+def impute_missing(t1,t2):
+
+    imp = Imputer(missing_values = np.nan,strategy = 'mean', axis = 1)
+    imp_cat = Imputer(missing_values = np.nan, strategy = 'most_frequent', axis = 1)
+    for col in FeatureNames:
+        if col in Cat_features:
+            try:
+                imp_cat.fit(t1[col])
+                t1[col] = imp_cat.transform(t1[col])
+                t2[col] = imp_cat.transform(t2[col])
+            except:
+                pass
+        else:
+            try:
+                imp.fit(t1[col])
+                t1[col] = imp.transform(t1[col])
+                t2[col] = imp.transform(t2[col])
+            except:
+                pass
+    return t1, t2
+train, test = impute_missing(train,test)
+
+
+#change the categorical variables into labels
 for col in Cat_features:
     le.fit(np.append(train[col].astype(str), test[col].astype(str)))
     train[col] = le.transform(train[col].astype(str)).astype(int)
     test[col] = le.transform(test[col].astype(str)).astype(int)
 
-#define the train data test data and train label
-X = train.drop(['id','timestamp','price_doc'],axis = 1)
-y = np.log(train.price_doc)
 
-X_new = test.drop(['id','timestamp'],axis=1)
+#Create some features in train and test datasets
+
+
+def make_datetime_features(df):
+    df['dayofweek'] = df.timestamp.dt.dayofweek
+    df['weekofyear'] = df.timestamp.dt.weekofyear
+    df['year'] = df.timestamp.dt.year
+    df['month'] = df.timestamp.dt.month
+    return df
+
+train = make_datetime_features(train)
+test = make_datetime_features(test)
+
+def get_macro_features(df):
+
+    return pd.merge(df, macro, on='timestamp', how='left')
+
+train_macro =get_macro_features(train)
+test_macro = get_macro_features(test)
+
+
+#define the train data test data and train label
+X = train_macro.drop(['id','timestamp','price_doc'],axis = 1)
+y = np.log(train_macro.price_doc)
+
+X_new = test_macro.drop(['id','timestamp'],axis=1)
 
 xgb_model = xgb.XGBRegressor()
 param_grid = {}
