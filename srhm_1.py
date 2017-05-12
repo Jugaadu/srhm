@@ -28,11 +28,18 @@ print(train.shape, test.shape, macro.shape)
 
 # fill na values with 0 in Macro dataset
 macro = macro.fillna(0)
-#macro.replace('#!',0,inplace = True)
-macro = macro.drop(['child_on_acc_pre_school',
-                    'modern_education_share',
-                    'old_education_build_share'],axis = 1)
+train = train.fillna(0)
+test = test.fillna(0)
+#macro = macro.drop(['child_on_acc_pre_school',
+#                    'modern_education_share',
+#                    'old_education_build_share'],axis = 1)
+def rep_comma(a):
+    return a.replace(',','')
 
+macro.loc[macro.child_on_acc_pre_school == '#!','child_on_acc_pre_school'] = '0'
+macro.child_on_acc_pre_school.astype(str).apply(rep_comma).astype(int)
+macro.modern_education_share.astype(str).apply(rep_comma).astype(int)
+macro.old_education_build_share.astype(str).apply(rep_comma).astype(int)
 # encode the ctegorical variables
 le = LabelEncoder()
 
@@ -51,27 +58,27 @@ for cd in macro.columns:
 #impute missing values using Imputer
 
 # impute missing values
-def impute_missing(t1,t2):
-
-    imp = Imputer(missing_values = np.nan,strategy = 'mean', axis = 1)
-    imp_cat = Imputer(missing_values = np.nan, strategy = 'most_frequent', axis = 1)
-    for col in FeatureNames:
-        if col in Cat_features:
-            try:
-                imp_cat.fit(t1[col])
-                t1[col] = imp_cat.transform(t1[col])
-                t2[col] = imp_cat.transform(t2[col])
-            except:
-                pass
-        else:
-            try:
-                imp.fit(t1[col])
-                t1[col] = imp.transform(t1[col])
-                t2[col] = imp.transform(t2[col])
-            except:
-                pass
-    return t1, t2
-train, test = impute_missing(train,test)
+#def impute_missing(t1,t2):
+#
+#    imp = Imputer(missing_values = np.nan,strategy = 'mean', axis = 1)
+#    imp_cat = Imputer(missing_values = np.nan, strategy = 'most_frequent', axis = 1)
+#    for col in FeatureNames:
+#        if col in Cat_features:
+#            try:
+#                imp_cat.fit(t1[col])
+#                t1[col] = imp_cat.transform(t1[col])
+#                t2[col] = imp_cat.transform(t2[col])
+#            except:
+#                pass
+#        else:
+#            try:
+#                imp.fit(t1[col])
+#                t1[col] = imp.transform(t1[col])
+#                t2[col] = imp.transform(t2[col])
+#            except:
+#                pass
+#    return t1, t2
+#train, test = impute_missing(train,test)
 
 
 #change the categorical variables into labels
@@ -84,15 +91,16 @@ for col in Cat_features:
 #Create some features in train and test datasets
 
 
-def make_datetime_features(df):
+def make_all_features(df):
     df['dayofweek'] = df.timestamp.dt.dayofweek
     df['weekofyear'] = df.timestamp.dt.weekofyear
     df['year'] = df.timestamp.dt.year
     df['month'] = df.timestamp.dt.month
+    df['inv_floor'] = 1./df.floor
     return df
 
-train = make_datetime_features(train)
-test = make_datetime_features(test)
+train = make_all_features(train)
+test = make_all_features(test)
 
 def get_macro_features(df):
 
