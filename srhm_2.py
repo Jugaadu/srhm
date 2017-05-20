@@ -59,6 +59,44 @@ def make_features(df):
     df["null_count"] = df.isnull().sum(axis=1)
     df.fillna(-99, inplace=True)
     # year and month #
+    df.loc[df["build_year"] == 0.0,"build_year"] = 2000.0
+    df.loc[df["build_year"] == 20052009.0 ,"build_year"] = 2005.0
+    df.loc[df["build_year"] == 215.0 ,"build_year"] = 2015.0
+    df.loc[df["build_year"] == 4965.0 ,"build_year"] = 1965.0
+    df.loc[df["build_year"] == 71.0 ,"build_year"] = 1971.0
+    df.loc[df["build_year"] == 1.0 ,"build_year"] = 2001.0
+    df.loc[df["build_year"] == 3.0 ,"build_year"] = 2003.0
+    df.loc[df["build_year"] == 20.0 ,"build_year"] = 2000.0
+    df.loc[df["material"] == 3.0,"material"] = 1.0
+    df.loc[((df["material"] == 5.0) & (df["build_year"] == -99.0)),"build_year"] = 1970.0
+    df.loc[((df["material"] == 2.0 )& (df["build_year"] == -99.0)),"build_year"] = 1965.0
+    df.loc[((df["material"] == 4.0) & (df["build_year"] == -99.0)),"build_year"] = 2016.0
+    df.loc[((df["material"] == 6.0) & (df["build_year"] == -99.0)),"build_year"] = 2016.0
+    df.loc[:,'male_f_p' ]= df.loc[:,'male_f']/np.maximum(df.loc[:,'full_all'],1)
+
+    df.loc[:,'young_all_p' ]= df.loc[:,'young_all']/np.maximum(df.loc[:,'full_all'],1)
+    df.loc[:,'young_male_p' ]= df.loc[:,'young_male']/np.maximum(df.loc[:,'full_all'],1)
+    df.loc[:,'work_all_p' ]= df.loc[:,'work_all']/np.maximum(df.loc[:,'full_all'],1)
+    df.loc[:,'work_male_p' ]= df.loc[:,'work_male']/np.maximum(df.loc[:,'full_all'],1)
+
+    df.loc[:,'ekder_all_p' ]= df.loc[:,'ekder_all']/np.maximum(df.loc[:,'full_all'],1)
+    df.loc[:,'ekder_male_p' ]= df.loc[:,'ekder_male']/np.maximum(df.loc[:,'full_all'],1)
+
+    df.loc[:,'0_6_all_p' ]= df.loc[:,'0_6_all']/np.maximum(df.loc[:,'full_all'],1)
+    df.loc[:,'0_6_male_p' ]= df.loc[:,'0_6_male']/np.maximum(df.loc[:,'full_all'],1)
+
+    df.loc[:,'7_14_all_p' ]= df.loc[:,'7_14_all']/np.maximum(df.loc[:,'full_all'],1)
+    df.loc[:,'7_14_male_p' ]= df.loc[:,'7_14_male']/np.maximum(df.loc[:,'full_all'],1)
+
+    df.loc[:,'0_17_all_p' ]= df.loc[:,'0_17_all']/np.maximum(df.loc[:,'full_all'],1)
+    df.loc[:,'0_17_male_p' ]= df.loc[:,'0_17_male']/np.maximum(df.loc[:,'full_all'],1)
+
+    df.loc[:,'16_29_all_p' ]= df.loc[:,'16_29_all']/np.maximum(df.loc[:,'full_all'],1)
+    df.loc[:,'16_29_male_p' ]= df.loc[:,'16_29_male']/np.maximum(df.loc[:,'full_all'],1)
+
+    df.loc[:,'0_13_all_p' ]= df.loc[:,'0_13_all']/np.maximum(df.loc[:,'full_all'],1)
+    df.loc[:,'0_13_male_p' ]= df.loc[:,'0_13_male']/np.maximum(df.loc[:,'full_all'],1)
+
     df["yearmonth"] = df["timestamp"].dt.year*100 + df["timestamp"].dt.month
     # year and week #
     df["yearweek"] = df["timestamp"].dt.year*100 + df["timestamp"].dt.weekofyear
@@ -127,4 +165,4 @@ optimized_GBM.fit(train_X, train_y)
 print(optimized_GBM.grid_scores_)
 
 # Best score is achieved with max_depth = 3 and min_child_weight = 1
-
+print(optimized_GBM.best_estimatior_)
